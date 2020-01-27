@@ -20,29 +20,38 @@ use structure::*;
 use std::mem;
 use std::ops::*;
 
-use simd::f32x4 as Simdf32x4;
-use simd::i32x4 as Simdi32x4;
-use simd::u32x4 as Simdu32x4;
+use num::BaseNum;
+use packed_simd::{Simd, SimdArray};
 
-impl From<Simdf32x4> for Vector4<f32> {
-    #[inline]
-    fn from(f: Simdf32x4) -> Self {
-        unsafe {
-            let mut ret: Self = mem::uninitialized();
-            {
-                let ret_mut: &mut [f32; 4] = ret.as_mut();
-                f.store(ret_mut.as_mut(), 0 as usize);
-            }
-            ret
-        }
+impl<S> From<Simd<[S; 4]>> for Vector4<S>
+where
+    S: Copy,
+    [S; 4]: SimdArray + From<Simd<[S; 4]>>
+{
+    fn from(f: Simd<[S; 4]>) -> Self {
+        let arr: [S; 4] = f.into();
+        Vector4 { x: arr[0], y: arr[1], z: arr[2], w: arr[3] }
     }
 }
 
+impl<S> Into<Simd<[S; 4]>> for Vector4<S>
+where
+    [S; 4]: SimdArray + Into<Simd<[S; 4]>>
+{
+    fn into(self) -> Simd<[S; 4]> {
+        let arr: [S; 4] = [self.x, self.y, self.w, self.z];
+        arr.into()
+    }
+}
+
+// TODO: hard to replicate without grouping SIMD types under traits that
+// implement e.g. sqrt(), approx_rsqrt(), and approx_reciprocal()
+// might need to make some custom traits to expose these methods generically
 impl Vector4<f32> {
     /// Compute and return the square root of each element.
     #[inline]
     pub fn sqrt_element_wide(self) -> Self {
-        let s: Simdf32x4 = self.into();
+        let s: Simd<[f32; 4]> = self.into();
         s.sqrt().into()
     }
 
@@ -61,333 +70,226 @@ impl Vector4<f32> {
     }
 }
 
-impl Into<Simdf32x4> for Vector4<f32> {
-    #[inline]
-    fn into(self) -> Simdf32x4 {
-        let self_ref: &[f32; 4] = self.as_ref();
-        Simdf32x4::load(self_ref.as_ref(), 0 as usize)
+impl<S> Add<Vector4<S>> for Vector4<S>
+where
+    [S; 4]: SimdArray,
+    Simd<[S; 4]>: Add<Output = Simd<[S; 4]>>,
+    Vector4<S>: From<Simd<[S; 4]>> + Into<Simd<[S; 4]>>,
+{
+    type Output = Self;
+
+    fn add(self, other: Vector4<S>) -> Vector4<S> {
+        let lhs: Simd<[S; 4]> = self.into();
+        let rhs: Simd<[S; 4]> = other.into();
+        (lhs + rhs).into()
     }
 }
 
-impl_operator_simd! {
-    [Simdf32x4]; Add<Vector4<f32>> for Vector4<f32> {
-        fn add(lhs, rhs) -> Vector4<f32> {
-            (lhs + rhs).into()
-        }
+impl<S> Sub<Vector4<S>> for Vector4<S>
+where
+    [S; 4]: SimdArray,
+    Simd<[S; 4]>: Sub<Output = Simd<[S; 4]>>,
+    Vector4<S>: From<Simd<[S; 4]>> + Into<Simd<[S; 4]>>,
+{
+    type Output = Self;
+
+    fn sub(self, other: Vector4<S>) -> Vector4<S> {
+        let lhs: Simd<[S; 4]> = self.into();
+        let rhs: Simd<[S; 4]> = other.into();
+        (lhs - rhs).into()
     }
 }
 
-impl_operator_simd! {
-    [Simdf32x4]; Sub<Vector4<f32>> for Vector4<f32> {
-        fn sub(lhs, rhs) -> Vector4<f32> {
-            (lhs - rhs).into()
-        }
+impl<S> Mul<S> for Vector4<S>
+where
+    [S; 4]: SimdArray,
+    Simd<[S; 4]>: Mul<S, Output = Simd<[S; 4]>>,
+    Vector4<S>: From<Simd<[S; 4]>> + Into<Simd<[S; 4]>>,
+{
+    type Output = Self;
+
+    fn mul(self, other: S) -> Vector4<S> {
+        let lhs: Simd<[S; 4]> = self.into();
+        (lhs * other).into()
     }
 }
 
-impl_operator_simd! {@rs
-    [Simdf32x4]; Mul<f32> for Vector4<f32> {
-        fn mul(lhs, rhs) -> Vector4<f32> {
-            (lhs * rhs).into()
-        }
+impl<S> Div<S> for Vector4<S>
+where
+    [S; 4]: SimdArray,
+    Simd<[S; 4]>: Div<S, Output = Simd<[S; 4]>>,
+    Vector4<S>: From<Simd<[S; 4]>> + Into<Simd<[S; 4]>>,
+{
+    type Output = Self;
+
+    fn div(self, other: S) -> Vector4<S> {
+        let lhs: Simd<[S; 4]> = self.into();
+        (lhs / other).into()
     }
 }
 
-impl_operator_simd! {@rs
-    [Simdf32x4]; Div<f32> for Vector4<f32> {
-        fn div(lhs, rhs) -> Vector4<f32> {
-            (lhs / rhs).into()
-        }
+impl<S> Neg for Vector4<S>
+where
+    [S; 4]: SimdArray,
+    Simd<[S; 4]>: Neg<Simd<[S; 4]>>,
+    Vector4<S>: From<Simd<[S; 4]>> + Into<Simd<[S; 4]>>,
+{
+    type Output = Self;
+
+    fn neg(self) -> Vector4<S> {
+        let lhs: Simd<[S; 4]> = self.into();
+        (-lhs).into()
     }
 }
 
-impl_operator_simd! {
-    [Simdf32x4]; Neg for Vector4<f32> {
-        fn neg(lhs) -> Vector4<f32> {
-            (-lhs).into()
-        }
-    }
-}
-
-impl AddAssign for Vector4<f32> {
-    #[inline]
+impl<S> AddAssign for Vector4<S>
+where
+    [S; 4]: SimdArray,
+    Simd<[S; 4]>: Add<Output = Simd<[S; 4]>>,
+    Vector4<S>: From<Simd<[S; 4]>> + Into<Simd<[S; 4]>>,
+{
     fn add_assign(&mut self, rhs: Self) {
-        let s: Simdf32x4 = (*self).into();
-        let rhs: Simdf32x4 = rhs.into();
+        let lhs: Simd<[S; 4]> = (*self).into();
+        let rhs: Simd<[S; 4]> = rhs.into();
         *self = (s + rhs).into();
     }
 }
 
-impl SubAssign for Vector4<f32> {
-    #[inline]
+impl<S> SubAssign for Vector4<S>
+where
+    [S; 4]: SimdArray,
+    Simd<[S; 4]>: Sub<Output = Simd<[S; 4]>>,
+    Vector4<S>: From<Simd<[S; 4]>> + Into<Simd<[S; 4]>>
+{
     fn sub_assign(&mut self, rhs: Self) {
-        let s: Simdf32x4 = (*self).into();
-        let rhs: Simdf32x4 = rhs.into();
+        let lhs: Simd<[S; 4]> = (*self).into();
+        let rhs: Simd<[S; 4]> = rhs.into();
         *self = (s - rhs).into();
     }
 }
 
-impl MulAssign<f32> for Vector4<f32> {
-    fn mul_assign(&mut self, other: f32) {
-        let s: Simdf32x4 = (*self).into();
-        let other = Simdf32x4::splat(other);
-        *self = (s * other).into();
+// dont implement SubAssign<S> for Vector4<S> because that would be adding a
+// scalar to a vector which is not well defined
+
+impl<S> MulAssign for Vector4<S>
+where
+    [S; 4]: SimdArray,
+    Simd<[S; 4]>: Mul<Output = Simd<[S; 4]>>,
+    Vector4<S>: From<Simd<[S; 4]>> + Into<Simd<[S; 4]>>
+{
+    fn mul_assign(&mut self, other: Vector4<S>) {
+        let lhs: Simd<[S; 4]> = (*self).into();
+        let rhs: Simd<[S; 4]> = rhs.into();
+        *self = (s * rhs).into();
     }
 }
 
-impl DivAssign<f32> for Vector4<f32> {
-    fn div_assign(&mut self, other: f32) {
-        let s: Simdf32x4 = (*self).into();
-        let other = Simdf32x4::splat(other);
+impl<S> DivAssign for Vector4<S>
+where
+    [S; 4]: SimdArray,
+    Simd<[S; 4]>: Div<Output = Simd<[S; 4]>>,
+    Vector4<S>: From<Simd<[S; 4]>> + Into<Simd<[S; 4]>>
+{
+    fn div_assign(&mut self, other: Vector4<S>) {
+        let lhs: Simd<[S; 4]> = (*self).into();
+        let rhs: Simd<[S; 4]> = rhs.into();
+        *self = (s / rhs).into();
+    }
+}
+
+impl<S> MulAssign<S> for Vector4<S>
+where
+    [S; 4]: SimdArray,
+    Simd<[S; 4]>: Mul<S, Output = Simd<[S; 4]>>,
+    Vector4<S>: From<Simd<[S; 4]>> + Into<Simd<[S; 4]>>
+{
+    fn mul_assign(&mut self, other: S) {
+        let lhs: Simd<[S; 4]> = (*self).into();
+        *self = (lhs * other).into();
+    }
+}
+
+impl<S> DivAssign<S> for Vector4<S>
+where
+    [S; 4]: SimdArray,
+    Simd<[S; 4]>: Div<S, Output = Simd<[S; 4]>>,
+    Vector4<S>: From<Simd<[S; 4]>> + Into<Simd<[S; 4]>>
+{
+    fn div_assign(&mut self, other: S) {
+        let lhs: Simd<[S; 4]> = (*self).into();
         *self = (s / other).into();
     }
 }
 
-impl ElementWise for Vector4<f32> {
-    #[inline]
-    fn add_element_wise(self, rhs: Vector4<f32>) -> Vector4<f32> {
+impl<S> ElementWise for Vector4<S>
+where
+    //S: ops::Mul<Output = S>,
+    S: BaseNum,
+    [S; 4]: SimdArray,
+    Vector4<S>: Into<Simd<[S; 4]>> + From<Simd<[S; 4]>>,
+    //Simd<[S; 4]>: ops::Mul<Output = Simd<[S; 4]>>,
+    Simd<[S; 4]>: BaseNum,
+{
+    fn add_element_wise(self, rhs: Vector4<S>) -> Vector4<S> {
         self + rhs
     }
-    #[inline]
-    fn sub_element_wise(self, rhs: Vector4<f32>) -> Vector4<f32> {
+
+    fn sub_element_wise(self, rhs: Vector4<S>) -> Vector4<S> {
         self - rhs
     }
-    #[inline]
-    fn mul_element_wise(self, rhs: Vector4<f32>) -> Vector4<f32> {
-        let s: Simdf32x4 = self.into();
-        let rhs: Simdf32x4 = rhs.into();
-        (s * rhs).into()
-    }
-    #[inline]
-    fn div_element_wise(self, rhs: Vector4<f32>) -> Vector4<f32> {
-        let s: Simdf32x4 = self.into();
-        let rhs: Simdf32x4 = rhs.into();
-        (s / rhs).into()
-    }
 
-    #[inline]
-    fn add_assign_element_wise(&mut self, rhs: Vector4<f32>) {
-        (*self) += rhs;
-    }
-
-    #[inline]
-    fn sub_assign_element_wise(&mut self, rhs: Vector4<f32>) {
-        (*self) -= rhs;
-    }
-
-    #[inline]
-    fn mul_assign_element_wise(&mut self, rhs: Vector4<f32>) {
-        let s: Simdf32x4 = (*self).into();
-        let rhs: Simdf32x4 = rhs.into();
-        *self = (s * rhs).into();
-    }
-
-    #[inline]
-    fn div_assign_element_wise(&mut self, rhs: Vector4<f32>) {
-        let s: Simdf32x4 = (*self).into();
-        let rhs: Simdf32x4 = rhs.into();
-        *self = (s * rhs).into();
-    }
-}
-
-impl ElementWise<f32> for Vector4<f32> {
-    #[inline]
-    fn add_element_wise(self, rhs: f32) -> Vector4<f32> {
-        let s: Simdf32x4 = self.into();
-        let rhs = Simdf32x4::splat(rhs);
-        (s + rhs).into()
-    }
-
-    #[inline]
-    fn sub_element_wise(self, rhs: f32) -> Vector4<f32> {
-        let s: Simdf32x4 = self.into();
-        let rhs = Simdf32x4::splat(rhs);
-        (s - rhs).into()
-    }
-
-    #[inline]
-    fn mul_element_wise(self, rhs: f32) -> Vector4<f32> {
+    fn mul_element_wise(self, rhs: Vector4<S>) -> Vector4<S> {
         self * rhs
     }
 
-    #[inline]
-    fn div_element_wise(self, rhs: f32) -> Vector4<f32> {
+    fn div_element_wise(self, rhs: Vector4<S>) -> Vector4<S> {
         self / rhs
     }
 
-    #[inline]
-    fn add_assign_element_wise(&mut self, rhs: f32) {
-        let s: Simdf32x4 = (*self).into();
-        let rhs = Simdf32x4::splat(rhs);
-        *self = (s + rhs).into();
+    fn add_assign_element_wise(&mut self, rhs: Vector4<S>) {
+        (*self) += rhs;
     }
 
-    #[inline]
-    fn sub_assign_element_wise(&mut self, rhs: f32) {
-        let s: Simdf32x4 = (*self).into();
-        let rhs = Simdf32x4::splat(rhs);
-        *self = (s - rhs).into();
-    }
-
-    #[inline]
-    fn mul_assign_element_wise(&mut self, rhs: f32) {
+    fn mul_assign_element_wise(&mut self, rhs: Vector4<S>) {
         (*self) *= rhs;
     }
 
-    #[inline]
-    fn div_assign_element_wise(&mut self, rhs: f32) {
+    fn div_assign_element_wise(&mut self, rhs: Vector4<S>) {
         (*self) /= rhs;
     }
 }
 
-impl From<Simdi32x4> for Vector4<i32> {
+impl<S> ElementWise<S> for Vector4<S> {
+    fn add_element_wise(self, rhs: S) -> Vector4<S> {
+        unimplemented!();
+    }
+
+    fn sub_element_wise(self, rhs: S) -> Vector4<S> {
+        unimplemented!();
+    }
+
+    fn mul_element_wise(self, rhs: S) -> Vector4<S> {
+        self * rhs
+    }
+
+    fn div_element_wise(self, rhs: S) -> Vector4<S> {
+        self / rhs
+    }
+
+    fn add_assign_element_wise(&mut self, rhs: S) {
+        unimplemented!();
+    }
+
     #[inline]
-    fn from(f: Simdi32x4) -> Self {
-        unsafe {
-            let mut ret: Self = mem::uninitialized();
-            {
-                let ret_mut: &mut [i32; 4] = ret.as_mut();
-                f.store(ret_mut.as_mut(), 0 as usize);
-            }
-            ret
-        }
+    fn sub_assign_element_wise(&mut self, rhs: S) {
+        unimplemented!();
     }
-}
 
-impl Into<Simdi32x4> for Vector4<i32> {
-    #[inline]
-    fn into(self) -> Simdi32x4 {
-        let self_ref: &[i32; 4] = self.as_ref();
-        Simdi32x4::load(self_ref.as_ref(), 0 as usize)
+    fn mul_assign_element_wise(&mut self, rhs: S) {
+        (*self) *= rhs;
     }
-}
 
-impl_operator_simd! {
-    [Simdi32x4]; Add<Vector4<i32>> for Vector4<i32> {
-        fn add(lhs, rhs) -> Vector4<i32> {
-            (lhs + rhs).into()
-        }
-    }
-}
-
-impl_operator_simd! {
-    [Simdi32x4]; Sub<Vector4<i32>> for Vector4<i32> {
-        fn sub(lhs, rhs) -> Vector4<i32> {
-            (lhs - rhs).into()
-        }
-    }
-}
-
-impl_operator_simd! {@rs
-    [Simdi32x4]; Mul<i32> for Vector4<i32> {
-        fn mul(lhs, rhs) -> Vector4<i32> {
-            (lhs * rhs).into()
-        }
-    }
-}
-
-impl_operator_simd! {
-    [Simdi32x4]; Neg for Vector4<i32> {
-        fn neg(lhs) -> Vector4<i32> {
-            (-lhs).into()
-        }
-    }
-}
-
-impl AddAssign for Vector4<i32> {
-    #[inline]
-    fn add_assign(&mut self, rhs: Self) {
-        let s: Simdi32x4 = (*self).into();
-        let rhs: Simdi32x4 = rhs.into();
-        *self = (s + rhs).into();
-    }
-}
-
-impl SubAssign for Vector4<i32> {
-    #[inline]
-    fn sub_assign(&mut self, rhs: Self) {
-        let s: Simdi32x4 = (*self).into();
-        let rhs: Simdi32x4 = rhs.into();
-        *self = (s - rhs).into();
-    }
-}
-
-impl MulAssign<i32> for Vector4<i32> {
-    fn mul_assign(&mut self, other: i32) {
-        let s: Simdi32x4 = (*self).into();
-        let other = Simdi32x4::splat(other);
-        *self = (s * other).into();
-    }
-}
-
-impl From<Simdu32x4> for Vector4<u32> {
-    #[inline]
-    fn from(f: Simdu32x4) -> Self {
-        unsafe {
-            let mut ret: Self = mem::uninitialized();
-            {
-                let ret_mut: &mut [u32; 4] = ret.as_mut();
-                f.store(ret_mut.as_mut(), 0 as usize);
-            }
-            ret
-        }
-    }
-}
-
-impl Into<Simdu32x4> for Vector4<u32> {
-    #[inline]
-    fn into(self) -> Simdu32x4 {
-        let self_ref: &[u32; 4] = self.as_ref();
-        Simdu32x4::load(self_ref.as_ref(), 0 as usize)
-    }
-}
-
-impl_operator_simd! {
-    [Simdu32x4]; Add<Vector4<u32>> for Vector4<u32> {
-        fn add(lhs, rhs) -> Vector4<u32> {
-            (lhs + rhs).into()
-        }
-    }
-}
-
-impl_operator_simd! {
-    [Simdu32x4]; Sub<Vector4<u32>> for Vector4<u32> {
-        fn sub(lhs, rhs) -> Vector4<u32> {
-            (lhs - rhs).into()
-        }
-    }
-}
-
-impl_operator_simd! {@rs
-    [Simdu32x4]; Mul<u32> for Vector4<u32> {
-        fn mul(lhs, rhs) -> Vector4<u32> {
-            (lhs * rhs).into()
-        }
-    }
-}
-
-impl AddAssign for Vector4<u32> {
-    #[inline]
-    fn add_assign(&mut self, rhs: Self) {
-        let s: Simdu32x4 = (*self).into();
-        let rhs: Simdu32x4 = rhs.into();
-        *self = (s + rhs).into();
-    }
-}
-
-impl SubAssign for Vector4<u32> {
-    #[inline]
-    fn sub_assign(&mut self, rhs: Self) {
-        let s: Simdu32x4 = (*self).into();
-        let rhs: Simdu32x4 = rhs.into();
-        *self = (s - rhs).into();
-    }
-}
-
-impl MulAssign<u32> for Vector4<u32> {
-    fn mul_assign(&mut self, other: u32) {
-        let s: Simdu32x4 = (*self).into();
-        let other = Simdu32x4::splat(other);
-        *self = (s * other).into();
+    fn div_assign_element_wise(&mut self, rhs: S) {
+        (*self) /= rhs;
     }
 }

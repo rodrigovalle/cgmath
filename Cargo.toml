@@ -19,6 +19,7 @@ name = "cgmath"
 [features]
 unstable = []
 swizzle = []
+simd = ["packed_simd"]
 
 [dependencies]
 approx = "0.3"
@@ -26,7 +27,7 @@ mint = { version = "0.5", optional = true }
 num-traits = "0.2"
 rand = { version = "0.7", optional = true }
 serde = { version = "1.0", features = ["serde_derive"], optional = true }
-simd = { version = "0.2", optional = true }  # works only in rust toolchain up to 1.32
+packed_simd = { git = "https://github.com/rust-lang/packed_simd.git", optional = true }
 
 [dev-dependencies]
 # glium = "0.23"  # causes problems with nightly-2019-01-01 needed for testing "simd"

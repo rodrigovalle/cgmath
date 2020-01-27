@@ -67,7 +67,7 @@ extern crate rand;
 extern crate serde;
 
 #[cfg(feature = "simd")]
-extern crate simd;
+extern crate packed_simd;
 
 // Re-exports
 
