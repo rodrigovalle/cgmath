@@ -67,7 +67,7 @@ extern crate rand;
 extern crate serde;
 
 #[cfg(feature = "simd")]
-extern crate simd;
+extern crate packed_simd;
 
 // Re-exports
 
@@ -100,9 +100,9 @@ mod structure;
 mod matrix;
 mod quaternion;
 
-#[cfg(feature = "simd")]
-mod quaternion_simd;
-
+// TODO(rodrigovalle): quaternion_simd not ready for packed_simd yet
+//#[cfg(feature = "simd")]
+//mod quaternion_simd;
 mod vector;
 
 #[cfg(feature = "simd")]

@@ -350,3 +350,12 @@ fn test_cast() {
         Vector4::new(13.5f32, -4.6, -8.3, 2.41)
     );
 }
+
+#[test]
+fn test_op_assign() {
+    let mut vec = vec4(2.0, 4.0, 8.0, 16.0);
+    vec *= 2.0;
+    vec /= 2.0;
+    vec += vec4(2.0, 2.0, 2.0, 2.0);
+    vec -= vec4(2.0, 2.0, 2.0, 2.0);
+}
