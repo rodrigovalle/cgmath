@@ -201,6 +201,14 @@ impl_operator_simd2!(
     }
 );
 
+impl_operator_simd2!(
+    impl<S> Rem<S> for Vector4<S> {
+        fn rem(lhs, rhs) -> Vector4<S> {
+            (lhs % rhs).into()
+        }
+    }
+);
+
 impl<S> Neg for Vector4<S>
 where
     S: Neg<Output = S>,
@@ -255,10 +263,6 @@ where
     }
 }
 
-// TODO(rodrigovalle):
-//   $ cargo test --features simd -- --nocapture | grep optimized
-// doesn't print "optmized impl"
-// we should add a test for the *Assign operators
 impl<S> DivAssign<S> for Vector4<S>
 where
     S: BaseNum,
@@ -272,11 +276,25 @@ where
     }
 }
 
+impl<S> RemAssign<S> for Vector4<S>
+where
+    S: BaseNum,
+    [S; 4]: SimdArray,
+    Simd<[S; 4]>: Rem<S, Output = Simd<[S; 4]>>,
+    Vector4<S>: From<Simd<[S; 4]>> + Into<Simd<[S; 4]>>,
+{
+    fn rem_assign(&mut self, other: S) {
+        let lhs: Simd<[S; 4]> = (*self).into();
+        *self = (lhs % other).into();
+    }
+}
+
 impl<S> ElementWise for Vector4<S>
 where
     S: BaseNum,
     [S; 4]: SimdArray,
-    Simd<[S; 4]>: Mul<Output = Simd<[S; 4]>> + Div<Output = Simd<[S; 4]>>,
+    Simd<[S; 4]>:
+        Mul<Output = Simd<[S; 4]>> + Div<Output = Simd<[S; 4]>> + Rem<Output = Simd<[S; 4]>>,
     Vector4<S>: From<Simd<[S; 4]>> + Into<Simd<[S; 4]>>,
 {
     fn add_element_wise(self, rhs: Vector4<S>) -> Vector4<S> {
@@ -299,6 +317,12 @@ where
         (lhs / rhs).into()
     }
 
+    fn rem_element_wise(self, rhs: Vector4<S>) -> Vector4<S> {
+        let lhs: Simd<[S; 4]> = self.into();
+        let rhs: Simd<[S; 4]> = rhs.into();
+        (lhs % rhs).into()
+    }
+
     fn add_assign_element_wise(&mut self, rhs: Vector4<S>) {
         (*self) += rhs;
     }
@@ -317,6 +341,12 @@ where
         let lhs: Simd<[S; 4]> = (*self).into();
         let rhs: Simd<[S; 4]> = rhs.into();
         *self = (lhs / rhs).into()
+    }
+
+    fn rem_assign_element_wise(&mut self, rhs: Vector4<S>) {
+        let lhs: Simd<[S; 4]> = (*self).into();
+        let rhs: Simd<[S; 4]> = rhs.into();
+        *self = (lhs % rhs).into()
     }
 }
 
@@ -345,6 +375,10 @@ where
         self / rhs
     }
 
+    fn rem_element_wise(self, rhs: S) -> Vector4<S> {
+        self % rhs
+    }
+
     fn add_assign_element_wise(&mut self, rhs: S) {
         let lhs: Simd<[S; 4]> = (*self).into();
         *self = (lhs + rhs).into();
@@ -361,5 +395,9 @@ where
 
     fn div_assign_element_wise(&mut self, rhs: S) {
         (*self) /= rhs;
+    }
+
+    fn rem_assign_element_wise(&mut self, rhs: S) {
+        (*self) %= rhs;
     }
 }

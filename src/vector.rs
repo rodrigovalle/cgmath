@@ -313,13 +313,13 @@ macro_rules! impl_vector {
             #[inline] default_fn!( sub_element_wise(self, rhs: $VectorN<S>) -> $VectorN<S> { $VectorN::new($(self.$field - rhs.$field),+) } );
             #[inline] default_fn!( mul_element_wise(self, rhs: $VectorN<S>) -> $VectorN<S> { $VectorN::new($(self.$field * rhs.$field),+) } );
             #[inline] default_fn!( div_element_wise(self, rhs: $VectorN<S>) -> $VectorN<S> { $VectorN::new($(self.$field / rhs.$field),+) } );
-            #[inline] fn rem_element_wise(self, rhs: $VectorN<S>) -> $VectorN<S> { $VectorN::new($(self.$field % rhs.$field),+) }
+            #[inline] default_fn!( rem_element_wise(self, rhs: $VectorN<S>) -> $VectorN<S> { $VectorN::new($(self.$field % rhs.$field),+) } );
 
             #[inline] default_fn!( add_assign_element_wise(&mut self, rhs: $VectorN<S>) { $(self.$field += rhs.$field);+ } );
             #[inline] default_fn!( sub_assign_element_wise(&mut self, rhs: $VectorN<S>) { $(self.$field -= rhs.$field);+ } );
             #[inline] default_fn!( mul_assign_element_wise(&mut self, rhs: $VectorN<S>) { $(self.$field *= rhs.$field);+ } );
             #[inline] default_fn!( div_assign_element_wise(&mut self, rhs: $VectorN<S>) { $(self.$field /= rhs.$field);+ } );
-            #[inline] fn rem_assign_element_wise(&mut self, rhs: $VectorN<S>) { $(self.$field %= rhs.$field);+ }
+            #[inline] default_fn!( rem_assign_element_wise(&mut self, rhs: $VectorN<S>) { $(self.$field %= rhs.$field);+ } );
         }
 
         impl<S: BaseNum> ElementWise<S> for $VectorN<S> {
@@ -327,13 +327,13 @@ macro_rules! impl_vector {
             #[inline] default_fn!( sub_element_wise(self, rhs: S) -> $VectorN<S> { $VectorN::new($(self.$field - rhs),+) } );
             #[inline] default_fn!( mul_element_wise(self, rhs: S) -> $VectorN<S> { $VectorN::new($(self.$field * rhs),+) } );
             #[inline] default_fn!( div_element_wise(self, rhs: S) -> $VectorN<S> { $VectorN::new($(self.$field / rhs),+) } );
-            #[inline] fn rem_element_wise(self, rhs: S) -> $VectorN<S> { $VectorN::new($(self.$field % rhs),+) }
+            #[inline] default_fn!( rem_element_wise(self, rhs: S) -> $VectorN<S> { $VectorN::new($(self.$field % rhs),+) } );
 
             #[inline] default_fn!( add_assign_element_wise(&mut self, rhs: S) { $(self.$field += rhs);+ } );
             #[inline] default_fn!( sub_assign_element_wise(&mut self, rhs: S) { $(self.$field -= rhs);+ } );
             #[inline] default_fn!( mul_assign_element_wise(&mut self, rhs: S) { $(self.$field *= rhs);+ } );
             #[inline] default_fn!( div_assign_element_wise(&mut self, rhs: S) { $(self.$field /= rhs);+ } );
-            #[inline] fn rem_assign_element_wise(&mut self, rhs: S) { $(self.$field %= rhs);+ }
+            #[inline] default_fn!( rem_assign_element_wise(&mut self, rhs: S) { $(self.$field %= rhs);+ } );
         }
 
         impl_scalar_ops!($VectorN<usize> { $($field),+ });
