@@ -31,3 +31,5 @@ simd = { version = "0.2", optional = true }  # works only in rust toolchain up t
 [dev-dependencies]
 # glium = "0.23"  # causes problems with nightly-2019-01-01 needed for testing "simd"
 serde_json = "1.0"
+rand = "0.7"
+rand_isaac = "0.2"

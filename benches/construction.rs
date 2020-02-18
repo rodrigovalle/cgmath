@@ -16,12 +16,17 @@
 #![feature(test)]
 #![allow(unused_macros)]
 
+#[cfg(not(feature = "rand"))]
+compile_error!("Benchmarks require the 'rand' feature.");
+
 extern crate cgmath;
 extern crate rand;
+extern crate rand_isaac;
 extern crate test;
 
 use cgmath::*;
-use rand::{FromEntropy, IsaacRng, Rng};
+use rand::{Rng, SeedableRng};
+use rand_isaac::IsaacRng;
 use test::Bencher;
 
 #[path = "common/macros.rs"]
@@ -31,7 +36,7 @@ mod macros;
 fn bench_from_axis_angle<T: Rotation3<f32>>(bh: &mut Bencher) {
     const LEN: usize = 1 << 13;
 
-    let mut rng = IsaacRng::from_entropy();
+    let mut rng = IsaacRng::seed_from_u64(0);
 
     let axis: Vec<_> = (0..LEN).map(|_| rng.gen::<Vector3<f32>>()).collect();
     let angle: Vec<_> = (0..LEN).map(|_| rng.gen::<Rad<f32>>()).collect();

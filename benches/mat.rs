@@ -16,11 +16,16 @@
 #![feature(test)]
 #![allow(unused_macros)]
 
+#[cfg(not(feature = "rand"))]
+compile_error!("Benchmarks require the 'rand' feature.");
+
 extern crate cgmath;
 extern crate rand;
+extern crate rand_isaac;
 extern crate test;
 
-use rand::{FromEntropy, IsaacRng, Rng};
+use rand::{Rng, SeedableRng};
+use rand_isaac::IsaacRng;
 use std::ops::*;
 use test::Bencher;
 
