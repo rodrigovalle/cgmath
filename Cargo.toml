@@ -34,3 +34,6 @@ packed_simd = { git = "https://github.com/rust-lang/packed_simd.git", optional =
 serde_json = "1.0"
 rand = "0.7"
 rand_isaac = "0.2"
+
+[profile.bench]
+opt-level = 3
